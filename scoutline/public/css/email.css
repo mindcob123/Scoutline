@@ -1,0 +1,24 @@
+.email-body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333333;
+}
+.email-heading {
+    color: #111111;
+    font-size: 24px;
+}
+.data-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 20px 0;
+}
+.table-label {
+    font-weight: bold;
+    padding: 8px;
+    border: 1px solid #dddddd;
+    background-color: #f9f9f9;
+}
+.table-value {
+    padding: 8px;
+    border: 1px solid #dddddd;
+}

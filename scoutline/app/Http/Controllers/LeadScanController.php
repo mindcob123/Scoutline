@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -14,33 +13,32 @@ class LeadScanController extends Controller
             'location' => 'required|string',
         ]);
 
-        $pythonUrl = env('PYTHON_SERVICE_URL', 'http://127.0.0.1:8001');
-        $apiKey = env('GEOAPIFY_API_KEY');
+        $pythonUrl = env('FASTAPI_URL', 'http://127.0.0.1:8001');                      //gets the URL of the FastAPI service and the Google API key from the environment variables
+        $apiKey = env('GOOGLE_API_KEY');
 
-        if (empty($apiKey)) {
-            // Fail clearly instead of silently sending an empty/invalid key.
-            return back()->with('error', 'Geoapify API key is not configured on the server.');
+        if (empty($apiKey)) {                                                         //checks if the Google API key is not configured on the server and returns an error message to the user
+            return back()->with('error', 'Google API key is not configured on the server.');
         }
 
-        $response = Http::post("{$pythonUrl}/api/scan", [
+        $response = Http::post("{$pythonUrl}/api/scan", [                            //sends a POST request to the FastAPI service with the category, location, and Google API key as parameters
             'category' => $request->category,
             'location' => $request->location,
+
             'api_key' => $apiKey,
         ]);
 
-        if ($response->successful()) {
+        if ($response->successful()) {                                              //checks if the HTTP request to the FastAPI service was successful and returns the response data to the user
             $responseData = $response->json();
 
             return back()->with([
                 'success' => $responseData['message'] ?? 'Scan complete!',
-                'results' => $responseData['results'] ?? [],
-                // Saved so the form fields can show the last search instead of
-                // resetting to hardcoded defaults on every successful scan.
+                'results' => $responseData['places'] ?? [],
                 'last_category' => $request->category,
                 'last_location' => $request->location,
+                
             ]);
         }
 
-        return back()->with('error', 'Could not connect to Python service.');
+        return back()->with('error', 'Could not connect to Python service or the Google API failed.');   //returns an error message to the user if failed
     }
 }

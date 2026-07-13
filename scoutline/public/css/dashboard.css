@@ -358,6 +358,91 @@
 .btn-ghost:hover { background-color: rgba(255,255,255,0.03); border-color: var(--text-white); }
 .btn-signal { background-color: var(--primary-gold); color: #000; font-weight: 600; padding: 12px 24px; border: none; border-radius: var(--radius-md); cursor: pointer; }
 .btn-signal:hover { opacity: 0.9; }
+/* =========================================================================
+   5. NESTED EXTENSION: CORE ENRICHMENT LOGISTICAL MATRIX
+   ========================================================================= */
+
+/* Overrides the raw expansion grid layout container row beneath table entries */
+.nested-lead-row {
+    background-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Injected panel anchoring the profile grid cards */
+.nested-lead-wrapper {
+    padding: 20px;
+    border-left: 3px solid var(--primary-gold);
+    background-color: var(--bg-dark);
+    margin: 10px 24px 24px 24px;
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    box-shadow: inset 0 4px 20px rgba(0,0,0,0.3);
+    animation: rowIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Custom modifier for profile decision maker identity blocks */
+.lead-card.nested-card {
+    background-color: var(--card-dark);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    min-width: 250px;
+    flex: 1 1 calc(33.333% - 16px);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Specialized text color variables mirroring your system theme defaults */
+.lead-card.nested-card .lead-name {
+    color: var(--text-white);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.lead-card.nested-card .specialty-color {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    color: #60a5fa; /* Vibrant corporate designation blue */
+    margin-bottom: 6px;
+}
+
+.lead-card.nested-card .lead-contact-value {
+    font-size: 0.85rem;
+    color: var(--text-white);
+    opacity: 0.85;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Secondary meta detail styling configuration parameter block */
+.lead-card.nested-card .lead-contact-value.phone-meta {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-family: monospace;
+}
+
+/* Source badge positioning normalization overrides */
+.lead-card.nested-card .source-tag.source-apollo {
+    align-self: flex-start;
+    margin-top: 8px;
+    background-color: rgba(242, 169, 59, 0.1);
+    color: var(--primary-gold);
+    border: 1px solid rgba(242, 169, 59, 0.2);
+}
+
+/* Dynamic Text Response Helpers */
+.text-muted-color {
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.85rem;
+    padding: 4px 0;
+}
 
 @keyframes rowIn {
     from { opacity: 0; transform: translateY(6px); }

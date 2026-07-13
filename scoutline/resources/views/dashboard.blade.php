@@ -26,7 +26,6 @@
             <div class="console-field">
                 <label for="categoryInput">Business Category</label>
                 <input type="text" id="categoryInput" name="category" placeholder="e.g. Logistics, Bakery, Clinics" value="{{ old('category', session('last_category', '')) }}">
-</div>
             </div>
             <div class="console-field">
                 <label for="locationInput">Location Target</label>
@@ -44,17 +43,16 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="scan-status" id="scanStatusError" style="display: flex; background: rgba(239, 68, 68, 0.1); border-color: #ef4444;">
+                <span style="color: #ef4444;">{{ session('error') }}</span>
+            </div>
+        @endif
+
         <!-- data-enrich-url: passed from the View (MVC) so JS never hardcodes the endpoint -->
         <div id="resultsArea" data-enrich-url="{{ route('api.enrich') }}">
             <div class="ledger">
                 @if (session('results'))
-                
-
-@if(session('error'))
-    <div class="scan-status" id="scanStatusError" style="display: flex; background: rgba(239, 68, 68, 0.1); border-color: #ef4444;">
-        <span style="color: #ef4444;">{{ session('error') }}</span>
-    </div>
-@endif
                     @if (count(session('results')) === 0)
                         <div class="empty-state">
                             <div class="eyebrow status-offline">0 Leads Extracted</div>
@@ -66,37 +64,51 @@
                                 <thead style="background: rgba(255,255,255,0.05);">
                                     <tr>
                                         <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-weight: 600;">Business Name</th>
+                                        <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-weight: 600;">Rating</th>
                                         <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-weight: 600;">Address Target</th>
                                         <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-weight: 600;">Phone Line</th>
                                         <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-weight: 600;">Web Domain</th>
-                                        <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-weight: 600;">Category Variable</th>
                                         <th style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-weight: 600;">Intelligence Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (session('results') as $business)
                                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                            <td style="padding: 12px; font-size: 14px; color: #fff;">{{ $business['name'] }}</td>
-                                            <td style="padding: 12px; font-size: 14px; color: #a1a1aa;">{{ $business['address'] }}</td>
-                                            <td style="padding: 12px; font-size: 14px; color: #60a5fa;">{{ $business['phone'] }}</td>
+                                            <!-- Google Places V1 maps Name structure inside displayName.text -->
+                                            <td style="padding: 12px; font-size: 14px; color: #fff; font-weight: 500;">
+                                                {{ $business['displayName']['text'] ?? 'Unknown Business' }}
+                                            </td>
+                                            
+                                            <!-- Real-time Quality Rating display -->
+                                            <td style="padding: 12px; font-size: 14px; color: #f59e0b;">
+                                                {{ isset($business['rating']) ? '⭐ ' . $business['rating'] : '—' }}
+                                            </td>
+
+                                            <!-- Google Places V1 maps address to formattedAddress -->
+                                            <td style="padding: 12px; font-size: 14px; color: #a1a1aa;">
+                                                {{ $business['formattedAddress'] ?? 'No Address Data' }}
+                                            </td>
+
+                                            <!-- Google Places V1 maps phone line to nationalPhoneNumber -->
+                                            <td style="padding: 12px; font-size: 14px; color: #60a5fa;">
+                                                {{ $business['nationalPhoneNumber'] ?? 'Unavailable' }}
+                                            </td>
+
+                                            <!-- Google Places V1 maps website url to websiteUri -->
                                             <td style="padding: 12px; font-size: 14px;">
-                                                @if($business['website'] !== 'No Website Listed')
-                                                    <a href="{{ $business['website'] }}" target="_blank" style="color: #10b981; text-decoration: underline;">Open URL</a>
+                                                @if(!empty($business['websiteUri']))
+                                                    <a href="{{ $business['websiteUri'] }}" target="_blank" style="color: #10b981; text-decoration: underline;">Open URL</a>
                                                 @else
-                                                    <span style="color: #71717a;">Unavailable</span>
+                                                    <span style="color: #71717a;">No Web Footprint</span>
                                                 @endif
                                             </td>
-                                            <td style="padding: 12px; font-size: 14px;">
-                                                <span style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 8px; border-radius: 4px; font-size: 12px;">
-                                                    {{ $business['category'] }}
-                                                </span>
-                                            </td>
+
                                             <td style="padding: 12px;">
                                                 <button
                                                     class="reveal-btn"
                                                     id="fetchBtn-{{ $loop->index }}"
-                                                    data-business-name="{{ $business['name'] }}"
-                                                    data-business-website="{{ $business['website'] !== 'No Website Listed' ? $business['website'] : '' }}"
+                                                    data-business-name="{{ $business['displayName']['text'] ?? '' }}"
+                                                    data-business-website="{{ $business['websiteUri'] ?? 'null' }}"
                                                     onclick="enrichLeads({{ $loop->index }})"
                                                 >
                                                     Fetch Leads

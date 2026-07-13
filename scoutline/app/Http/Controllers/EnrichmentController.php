@@ -1,63 +1,44 @@
 <?php
-
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class EnrichmentController extends Controller
 {
-    /**
-     * Handle a lead enrichment request for a single business.
-     *
-     * FRONTEND CONTRACT (already wired in dashboard.js — do not change the
-     * request/response shape without updating enrichLeads() as well):
-     *
-     * Request JSON:
-     *   { "name": string, "website": string|null }
-     *
-     * Response JSON (200):
-     *   {
-     *     "leads": [
-     *       { "name": string, "title": string, "email": string },
-     *       ...
-     *     ]
-     *   }
-     *
-     *   An empty "leads" array is valid — it means no contacts were found.
-     *   If "website" is null/empty, return an empty leads array immediately
-     *   (Apollo needs a domain to search against).
-     *
-     * TODO (backend owner):
-     *   - Validate the incoming website looks like a real domain.
-     *   - Call the Apollo integration using that website/domain.
-     *   - Consider caching by domain (e.g. in a `leads` table keyed on
-     *     website) so re-enriching the same business doesn't burn another
-     *     Apollo credit on every request.
-     *   - Replace the dummy $leads array below with real results.
-     */
     public function enrich(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'website' => 'nullable|string|max:255',
+        $request->validate([
+            'company_name' => 'required|string',                            //takes the company name as input from the user
+            'domain' => 'nullable|string',                                  //takes the domain as input from the user, but it is optional
         ]);
 
-        if (empty($validated['website'])) {
-            return response()->json(['leads' => []]);
+        $pythonUrl = env('FASTAPI_URL', 'http://127.0.0.1:8001');          //gets the URL of the FastAPI service from the env and Apollo API key
+        $apolloApiKey = env('APOLLO_API_KEY');                             
+
+        if (empty($apolloApiKey)) {                                         // Fail clearly instead of silently sending an empty/invalid key.
+            return response()->json([
+                'error' => 'Apollo API key is not configured on the server.'], 500);
+        }
+        try{                                                                 //try block to catch any exceptions that may occur during the HTTP request to the FastAPI service
+            $response = Http::post("{$pythonUrl}/enrich", [
+                'company_name' => $request->company_name,
+                'domain' => $request->domain,
+                'api_key' => $apolloApiKey,
+            ]);
+
+            if ($response->failed()) {                                        //checks if the HTTP request to the FastAPI service failed
+                Log::error('Apollo API request failed'. $response->body());
+                return response()->json([
+                    'error' => 'Failed to fetch details from enrichment engine.',], 500);
+            }  
+           return response()->json($response->json());                        //returns the response from the FastAPI service as a JSON response to the client
+
+        } catch (\Exception $e) {                                             //catches any exceptions that may occur during the HTTP request to the FastAPI service
+            Log::error('Failed to connect to Python service for enrichment: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Enrichment service connection timeout.'], 500);
         }
 
-        // --- DUMMY DATA — remove once the real Apollo integration is in place ---
-        $leads = [
-            [
-                'name' => 'Jane Doe (placeholder)',
-                'title' => 'Operations Manager',
-                'email' => 'jane@example.com',
-            ],
-        ];
-        // --- end dummy data ---
-
-        return response()->json([
-            'leads' => $leads,
-        ]);
     }
 }

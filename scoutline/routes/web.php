@@ -5,37 +5,45 @@ use App\Http\Controllers\MemberController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LeadScanController;
 use App\Http\Controllers\EnrichmentController;
+use App\Http\Controllers\ForgotPasswordController;
 
-Route::get('/', function () {
+
+Route::get('/', function () {                                                              //LANDING PAGE
     return view('landing');
 });
 
-// --- REGISTRATION SYSTEM ---
-
-Route::get('/signup', [MemberController::class, 'create']);
+Route::get('/signup', [MemberController::class, 'create']);                                 //REGISTRATION SYSTEM 
 Route::post('/signup', [MemberController::class, 'store']);
 
-// --- DASHBOARD (PROTECTED) ---
 
-Route::get('/dashboard', function () {
+Route::get('/dashboard', function () {                                                       //DASHBOARD protected by auth middleware, only accessible to authenticated users 
+
     return view('dashboard');
 })->middleware('auth');
 
-// --- LOGIN & LOGOUT SYSTEM ---
 
-Route::get('/login', [LoginController::class, 'create'])->name('login');
+Route::get('/login', [LoginController::class, 'create'])->name('login');                       //LOGIN & LOGOUT SYSTEM
 Route::post('/login', [LoginController::class, 'store']);
 Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
-// --- LEAD SCAN SYSTEM ---
-// Full page submit — Python (Geoapify) service is called here, results land in session.
-Route::post('/scan', [LeadScanController::class, 'scan'])
-    ->middleware('auth')
-    ->name('scan');
+Route::post('/scan', [LeadScanController::class, 'scan'])->name('scan');                        //LEAD SCAN SYSTEM
 
-// --- LEAD ENRICHMENT SYSTEM (AJAX, no page reload) ---
-// Called by the "Fetch Leads" button per row. Takes a business's
-// name + website and returns Apollo contact data as JSON.
-Route::post('/api/enrich', [EnrichmentController::class, 'enrich'])
-    ->middleware('auth')
-    ->name('api.enrich');
+Route::post('/business/enrich', [EnrichmentController::class, 'enrich'])->name('api.enrich');   // LEAD ENRICHMENT SYSTEM
+
+Route::get('/email/verify/{id}/{hash}', function ($id, $hash) {                                //HANDLES THE CLICKED EMAIL LINK
+    $user = Member::findOrFail($id);                                                          //looks up that specific user in your members database table
+    if (!hash_equals((string) $hash, sha1($user->email))) {                                   // Validate if the email hash matches what was signed
+        abort(403, 'Invalid verification link.');
+    }
+    if (!$user->hasVerifiedEmail()) {                                                        
+        $user->markEmailAsVerified(); 
+    }
+    return redirect('/login')->with('success', 'Email verified successfully! You can now log in.');
+})->middleware(['signed'])->name('verification.verify');                                     // 'signed' middleware verifies that the URL hasn't been tampered with or expired!
+
+
+Route::get('/forgot-password', [ForgotPasswordController::class, 'showRequestForm'])->name('password.request'); // Request Reset Form & Email Processor
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
+
+Route::get('/reset-password/{id}/{hash}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset')->middleware('signed');// Secure Signed Password Entry Forms & Update Handlers
+Route::post('/reset-password', [ForgotPasswordController::class, 'updatePassword'])->name('password.update');

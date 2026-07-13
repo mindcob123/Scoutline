@@ -38,7 +38,13 @@
                 <div class="form-group">
                     <label class="form-label">Password</label>
                     <input type="password" name="password" class="form-input" required placeholder="••••••••">
+                    <div style="margin-top: 8px; text-align: right;">
+                        <a href="{{ route('password.request') }}" style="color: #ef4444; font-size: 13px; text-decoration: none;">
+                            Forgot Password?
+                        </a>
+                    </div>
                 </div>
+                
 
                 <button type="submit" class="btn-primary">Sign In</button>
             </form>

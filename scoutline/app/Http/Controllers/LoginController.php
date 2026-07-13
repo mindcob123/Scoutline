@@ -8,43 +8,32 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
-    // 1. Show the login form
-    public function create()
+    public function create()                                                    // show the login form
     {
         return view('login');
     }
 
-    // 2. Handle the login submission
-    public function store(Request $request)
+    public function store(Request $request)                                   // handle the login submission
     {
-        // Validate inputs
-        $attributes = $request->validate([
+        $attributes = $request->validate([                                    // Validate inputs
             'email' => 'required|email',
             'password' => 'required'
         ]);
 
-        // Attempt to log the user in using the credentials
-        if (! Auth::attempt($attributes)) {
+        if (! Auth::attempt($attributes)) {                                   // Attempt to log the user in using the credentials
             throw ValidationException::withMessages([
                 'email' => 'Sorry, those credentials do not match our records.'
             ]);
         }
-
-        // Regenerate session to protect against session fixation attacks
-        $request->session()->regenerate();
-
-        // Redirect straight to dashboard
-        return redirect('/dashboard')->with('success', 'Welcome back!');
+        $request->session()->regenerate();                                   // Regenerate session to protect against session fixation attacks
+        return redirect('/dashboard')->with('success', 'Welcome back!');     // Redirect straight to dashboard
     }
 
-    // 3. Handle logging out
-    public function destroy(Request $request)
+    public function destroy(Request $request)                                  // Handle logging out
     {
-        Auth::logout();
-
+        Auth::logout();                                                       // Log the user out
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        return redirect('/login')->with('success', 'Logged out successfully.');
+        return redirect('/login')->with('success', 'Logged out successfully.'); // Redirect to login page with a success message
     }
 }

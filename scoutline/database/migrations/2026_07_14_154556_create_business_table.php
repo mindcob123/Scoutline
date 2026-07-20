@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
-{
+{                                                      //BUSINESS TABLE
     // Run the migrations.
     public function up(): void
     {

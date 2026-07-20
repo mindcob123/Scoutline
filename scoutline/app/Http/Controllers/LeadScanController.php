@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
@@ -9,7 +10,7 @@ use App\Models\RecentSearch;
 
 class LeadScanController extends Controller
 {
-// for most searched history 
+     // Returns user's recent searches or most searched categories.
     public function history(Request $request)
     {
         if ($request->boolean('mine')) {
@@ -32,7 +33,8 @@ class LeadScanController extends Controller
         ]);
     }
 
-    // Fetching business from Google Maps
+    // Main method to scan businesses from Google Maps via Python service.
+    //Implements caching logic, saves to database, updates session and RecentSearch.
     public function scan(Request $request)
     {
         
@@ -43,10 +45,11 @@ class LeadScanController extends Controller
         ]);
 
         $limit = $validated['limit'] ?? 20;
-
-        // 1. DEDUPLICATION: Check if this search combination exists already, and already has
-        // at least as many businesses saved as the user is asking for this time. If the user
-        // is asking for more than we previously cached, we need a fresh scan instead.
+        /**
+         * DEDUPLICATION: Check if this search combination exists already, and already has
+         * at least as many businesses saved as the user is asking for this time. If the user
+         * is asking for more than we previously cached, we need a fresh scan instead.
+         */
         $existing = RecentSearch::where('category', $validated['category'])
                                 ->where('location', $validated['location'])
                                 ->latest()
@@ -75,7 +78,7 @@ class LeadScanController extends Controller
             ]);
         }
 
-        // 2. FRESH SCAN: Call Python service if no valid cache exists
+        // FRESH SCAN: Call Python service if no valid cache exists
         $pythonUrl = env('FASTAPI_URL', 'http://127.0.0.1:8001');
         $apiKey = env('GOOGLE_API_KEY');
 
@@ -118,7 +121,7 @@ class LeadScanController extends Controller
                 'results'   => $results,
             ]);
 
-            // FIX: Persist the fresh scan results in the session so the exporter can access it!
+            // Persist the fresh scan results in the session so the exporter can access it!
             session([
                 'results'       => $results,
                 'last_category' => $validated['category'],
@@ -136,26 +139,28 @@ class LeadScanController extends Controller
 
         return back()->with('error', 'Python service connection failed.');
     }
+    // Business Deletion
+   // Deletes a business from the database, updates session and all RecentSearch records.  
     public function destroyBusiness($businessId) {
-    // 1. Delete from DB
-    $business = Business::where('member_id', auth()->id())->findOrFail($businessId);
-    $business->delete();
+        // 1. Delete from DB
+        $business = Business::where('member_id', auth()->id())->findOrFail($businessId);
+        $business->delete();
 
-    // 2. Update the session (This fixes the UI bug)
-    $results = session('results', []);
-    $updatedResults = array_values(array_filter($results, function ($item) use ($businessId) {
-        return ($item['id'] ?? null) != $businessId;
-    }));
-    session(['results' => $updatedResults]);
-
-    // 3. Update the RecentSearch cache
-    $recentSearches = RecentSearch::where('member_id', auth()->id())->get();
-    foreach ($recentSearches as $search) {
-        $search->results = array_values(array_filter($search->results, function ($item) use ($businessId) {
+        // 2. Update the session 
+        $results = session('results', []);
+        $updatedResults = array_values(array_filter($results, function ($item) use ($businessId) {
             return ($item['id'] ?? null) != $businessId;
         }));
-        $search->save();
-    }
+        session(['results' => $updatedResults]);
 
-    return response()->json(['success' => true]);
-}}
+        // 3. Update the RecentSearch cache
+        $recentSearches = RecentSearch::where('member_id', auth()->id())->get();
+        foreach ($recentSearches as $search) {
+            $search->results = array_values(array_filter($search->results, function ($item) use ($businessId) {
+                return ($item['id'] ?? null) != $businessId;
+            }));
+            $search->save();
+        }
+        return response()->json(['success' => true]);
+    }
+}

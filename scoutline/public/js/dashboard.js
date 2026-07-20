@@ -104,7 +104,7 @@ async function runEnrichment(idx, fields) {
     btn.innerText = 'Connecting...';
 
     currentAbortController = new AbortController();
-    const timeoutId = setTimeout(() => currentAbortController.abort(), 15000);
+    const timeoutId = setTimeout(() => currentAbortController.abort(), 200000);
 
     try {
         const response = await fetch(document.getElementById('resultsArea').dataset.enrichUrl, {

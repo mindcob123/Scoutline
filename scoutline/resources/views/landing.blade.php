@@ -3,23 +3,21 @@
 
     <x-slot:styles>
         <link rel="stylesheet" href="{{ asset('css/landing.css') }}">
-    </x-slot>
-
-    <!-- Top Header Navigation Bar -->
+    </x-slot:styles>
+    <!-- TOP NAVIGATION BAR -->
     <nav class="navbar">
         <a href="/" class="brand-logo">
-            📡 Scout<span>line</span>
+             Scout<span>line</span>
         </a>
         <div class="nav-actions">
             <a href="/login" class="btn-outline">Sign in</a>
             <a href="/signup" class="btn-outline" style="margin-left: 10px; border-color: var(--primary-gold); color: var(--primary-gold);">Sign Up</a>
         </div>
     </nav>
-
-    <!-- Primary Hero Segment Section -->
+    <!-- HERO SECTION -->
     <div class="hero-wrapper">
         
-        <!-- Animated Intelligence Radar Frame Box -->
+        <!-- Animated Intelligence Radar -->
         <div class="radar-viewport">
             <div class="radar-container">
                 <div class="radar-axis-h"></div>
@@ -34,7 +32,10 @@
             </div>
         </div>
 
+        <!-- Tagline -->
         <p class="radar-tagline">Local Business & Lead Radar</p>
+        
+        <!-- Main Headline -->
         <h1 class="hero-headline">
             Scan a neighborhood. <span>Log every decision-maker.</span>
         </h1>

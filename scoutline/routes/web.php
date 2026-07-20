@@ -12,10 +12,8 @@ use App\Http\Controllers\ProfileController;
 Route::middleware('guest')->group(function () {
     Route::get('/signup', [MemberController::class, 'create']);
     Route::post('/signup', [MemberController::class, 'store']);
-    
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
-    
     // Password recovery
     Route::get('/forgot-password', [ForgotPasswordController::class, 'showRequestForm'])->name('password.request');
     Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
@@ -24,7 +22,7 @@ Route::middleware('guest')->group(function () {
 });
 
 // AUTHENTICATED ROUTES (Only accessible when logged in)
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', \App\Http\Middleware\PreventBackHistory::class])->group(function () {
     Route::get('/dashboard', fn() => view('dashboard'));
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
     // Tools that require a user session

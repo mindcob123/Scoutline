@@ -5,10 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
+{                                                            // RECENT SEARCHES
+    // Run the migrations.
     public function up(): void
     {
         Schema::create('recent_searches', function (Blueprint $table) {

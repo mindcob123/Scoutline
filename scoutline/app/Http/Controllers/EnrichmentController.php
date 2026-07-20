@@ -16,11 +16,13 @@ class EnrichmentController extends Controller
     private const APOLLO_MATCH_URL  = 'https://api.apollo.io/api/v1/people/match'; // 1 credit 
     private const APOLLO_ORG_SEARCH_URL = 'https://api.apollo.io/api/v1/mixed_companies/search'; // search by company name
 
-    private const APOLLO_PAGE_SIZE = 4;
+    private const APOLLO_PAGE_SIZE = 10;
     private const MAX_PAGES = 10;
-
+    //Main method that handles the lead enrichment request. Validates input, gets domain, searches Apollo, saves data and returns leads.
     public function enrich(Request $request)
     {
+        set_time_limit(500);
+
         try {
             $validated = $request->validate([
                 'name'    => 'required|string|max:255',
@@ -43,8 +45,8 @@ class EnrichmentController extends Controller
 
             $domain = $this->getDomain($validated['name'], $validated['website'] ?? null, $apiKey);
 
-            // Disable contact fetching until you have credits
-            $needsContact = false;
+            // Toggle it off to disable contact fetching until you have credits
+            $needsContact = true;
 
             $leads = [];
 
@@ -70,12 +72,17 @@ class EnrichmentController extends Controller
                 ->latest()
                 ->first();
 
-            Lead::create([
-                'member_id'   => $memberId,
-                'business_id' => $business->id ?? null,
-                'domain'      => $domain ?? 'name_based',
-                'leads'       => $leads,
-            ]);
+            // Updated logic to prevent duplicate entry errors
+            Lead::updateOrCreate(
+                [
+                  'member_id' => $memberId,
+                  'domain'    => $domain ?? 'name_based',
+                ],
+                [
+                 'business_id' => $business->id ?? null,
+                 'leads'       => $leads,
+                ]
+                );
 
             $this->persistLeadsToHistory($memberId, $validated['name'], $validated['website'] ?? null, $leads);
 
@@ -86,7 +93,8 @@ class EnrichmentController extends Controller
             return response()->json(['leads' => [], 'error' => 'Something went wrong. Please try again.'], 500);
         }
     }
-
+    // Domain Resolution Group
+     // Determines the domain for the company. First tries to extract from website, if not available then resolves using company name.
     private function getDomain(string $name, ?string $website, string $apiKey): ?string
     {
         if ($website) {
@@ -97,6 +105,8 @@ class EnrichmentController extends Controller
         return $this->resolveDomainByName($name, $apiKey);
     }
 
+    
+     // Extracts clean domain name from a full website URL. Removes http/https, www, and converts to lowercase.
     private function extractDomain(string $website): ?string
     {
         $website = trim($website);
@@ -111,7 +121,7 @@ class EnrichmentController extends Controller
         $host = parse_url($website, PHP_URL_HOST);
         return $host ? preg_replace('/^www\./i', '', strtolower($host)) : null;
     }
-
+     // Uses Apollo API to search organization by company name and returns its primary domain.
     private function resolveDomainByName(string $name, string $apiKey): ?string
     {
         $name = trim($name);
@@ -120,7 +130,7 @@ class EnrichmentController extends Controller
         $response = Http::withHeaders([
             'x-api-key' => $apiKey,
             'Content-Type' => 'application/json',
-        ])->post(self::APOLLO_ORG_SEARCH_URL, [
+        ])->timeout(8)->post(self::APOLLO_ORG_SEARCH_URL, [
             'q_organization_name' => $name,
             'page' => 1,
             'per_page' => 3,
@@ -137,17 +147,18 @@ class EnrichmentController extends Controller
         $domain = $org['primary_domain'] ?? $org['domain'] ?? null;
         return $domain ? preg_replace('/^www\./i', '', strtolower($domain)) : null;
     }
-
+    // Search & Enrichment Group. Searches for people using company domain.
     private function searchAndEnrich(string $domain, string $apiKey, bool $needsContact): array
     {
         return $this->performPeopleSearch(['q_organization_domains' => $domain], $apiKey, $needsContact);
     }
-
+    // Searches for people using company name (fallback when domain is not available).
     private function searchByCompanyName(string $companyName, string $apiKey, bool $needsContact): array
     {
         return $this->performPeopleSearch(['q_organization_name' => $companyName], $apiKey, $needsContact);
     }
 
+     // Core function that calls Apollo people search API with pagination. Collects people data and optionally enriches individual contacts.
     private function performPeopleSearch(array $searchParams, string $apiKey, bool $needsContact): array
     {
         $leads = [];
@@ -157,17 +168,25 @@ class EnrichmentController extends Controller
             $response = Http::withHeaders([
                 'x-api-key' => $apiKey,
                 'Content-Type' => 'application/json',
-            ])->post(self::APOLLO_SEARCH_URL, array_merge($searchParams, [
+            ])->timeout(8)->post(self::APOLLO_SEARCH_URL, array_merge($searchParams, [
                 'page' => $page,
                 'per_page' => self::APOLLO_PAGE_SIZE,
             ]));
 
             if (!$response->successful()) {
-                break;
+                Log::error('Apollo API call failed', [
+                   'status' => $response->status(),
+                   'body' => $response->body(), // This will show you if it's a 401, 429, or 400
+                ]);
+            break;
             }
-
             $data = $response->json();
             $people = $data['people'] ?? $data['contacts'] ?? [];
+            Log::info('Apollo page result', [
+                'page' => $page,
+                'people_count' => count($people),
+                'total_entries' => $data['pagination']['total_entries'] ?? null,
+            ]);
 
             foreach ($people as $person) {
                 $matched = $needsContact ? $this->matchPerson($person['id'] ?? null, $apiKey) : [];
@@ -188,7 +207,7 @@ class EnrichmentController extends Controller
 
         return $leads;
     }
-
+     // Calls Apollo match endpoint to get detailed information (email, phone etc.) for a specific person using their ID.
     private function matchPerson(?string $personId, string $apiKey): array
     {
         if (!$personId) return [];
@@ -196,14 +215,14 @@ class EnrichmentController extends Controller
         $response = Http::withHeaders([
             'x-api-key' => $apiKey,
             'Content-Type' => 'application/json',
-        ])->post(self::APOLLO_MATCH_URL, [
+        ])->timeout(8)->post(self::APOLLO_MATCH_URL, [
             'id' => $personId,
             'reveal_personal_emails' => true,
         ]);
 
         return $response->successful() ? ($response->json()['person'] ?? []) : [];
     }
-
+    // Filters the leads array to return only the requested fields.
     private function filterFields(array $leads, array $fields): array
     {
         return array_map(function ($lead) use ($fields) {
@@ -211,6 +230,7 @@ class EnrichmentController extends Controller
         }, $leads);
     }
 
+     // Updates the RecentSearch history for the user with the latest leads data.    
     private function persistLeadsToHistory(?int $memberId, string $businessName, ?string $businessWebsite, array $leads): void
     {
         if (!$memberId) return;

@@ -13,7 +13,7 @@ class RecentSearch extends Model
         'results' => 'array',
     ];
 // most searched categories
- public static function mostSearchedCategories(int $limit = 10)
+ public static function mostSearchedCategories(int $limit = 20)
     {
         return static::select('category')
             ->selectRaw('COUNT(*) as search_count')

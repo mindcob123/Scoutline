@@ -1,21 +1,33 @@
 <x-layout>
-    <section class="dashboard" style="max-width: 450px; margin: 80px auto; padding: 20px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px;">
-        <h2>Account Recovery</h2>
-        <p style="color: #a1a1aa; font-size: 14px; margin-bottom: 20px;">Enter your registration email address to receive a secure configuration token link.</p>
+    <link rel="stylesheet" href="{{ asset('css/global.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/forgetpassrequest.css') }}">
+
+    <section class="auth-card">
+        <h2 class="auth-header">Account Recovery</h2>
+        <p class="auth-subheader">Enter your registration email address to receive a secure link.</p>
         
         @if(session('success'))
-            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; color: #10b981; padding: 12px; border-radius: 4px; margin-bottom: 15px; font-size: 14px;">
+            <div class="success-alert">
                 {{ session('success') }}
             </div>
         @endif
 
-        <form action="{{ route('password.email') }}" method="POST" class="console">
-            @csrf
-            <div class="console-field">
-                <label>Operator Email</label>
-                <input type="email" name="email" required placeholder="name@domain.com">
+        @if ($errors->any())
+            <div class="error-alert">
+                {{ $errors->first() }}
             </div>
-            <button type="submit" class="btn btn-signal" style="width: 100%; margin-top: 15px;">Send Recovery Link</button>
+        @endif
+
+        <form action="{{ route('password.email') }}" method="POST">
+            @csrf
+            <div class="form-group">
+                <label class="form-label">Your Email</label>
+                <input type="email" name="email" class="form-input" required placeholder="name@domain.com">
+            </div>
+            
+            <button type="submit" class="btn-primary">
+                Send Recovery Link
+            </button>
         </form>
     </section>
 </x-layout>

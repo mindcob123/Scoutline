@@ -1,0 +1,308 @@
+/* =========================================================================
+   RESPONSIVE.CSS
+   Single shared source of breakpoint rules for the whole site.
+   Imported at the top of every page-specific stylesheet — nothing else
+   should define a @media query outside this file, so there's one place
+   to check/update breakpoint behavior instead of eight.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   DASHBOARD (dashboard.css)
+   ------------------------------------------------------------------------- */
+
+/* Tablet (~900px and below): keep the table's columns from crushing —
+   scroll horizontally instead of squeezing every cell unreadable. */
+@media (max-width: 900px) {
+    .dashboard { padding: 28px 16px; }
+    .ledger { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .ledger table { min-width: 720px; }
+}
+
+/* Small tablet / large phone */
+@media (max-width: 768px) {
+    .console { grid-template-columns: 1fr; }
+    .console-field { width: 100%; }
+
+    .dash-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .app-brand-mark { font-size: 40px; }
+
+    .lead-card.nested-card { flex: 1 1 calc(50% - 16px); }
+}
+
+/* Phone */
+@media (max-width: 600px) {
+    .nested-lead-wrapper {
+        margin: 10px 12px 24px 12px;
+        padding: 14px;
+        gap: 12px;
+    }
+
+    .lead-card.nested-card { flex: 1 1 100%; min-width: 0; }
+
+    .drawer-head { padding: 24px 18px 16px 18px; }
+    .drawer-body { padding: 18px; }
+    .drawer-foot { padding: 16px 18px; }
+}
+
+/* Small phone */
+@media (max-width: 420px) {
+    .dashboard { padding: 20px 12px; }
+    .dash-head h2 { font-size: 1.3rem; }
+
+    .scope-count {
+        font-size: 0.7rem;
+        padding: 5px 10px;
+    }
+
+    .console { padding: 16px; }
+
+    .ledger th, .ledger td {
+        padding: 12px 14px;
+        font-size: 0.85rem;
+    }
+
+    .open-drawer-btn {
+        padding: 8px 14px;
+        font-size: 0.75rem;
+    }
+
+    .app-brand-mark { font-size: 32px; }
+}
+
+/* Very small screens hit both the 900px scroll-table rule and this one —
+   placed last so it wins: a 7-column table has no business trying to
+   scroll horizontally on a phone (columns get crushed, text wraps 4-5
+   lines deep, and right-hand columns get clipped off with no visible
+   affordance). Stack each row into a labeled card instead. */
+@media (max-width: 700px) {
+    .ledger { overflow-x: visible; }
+
+    .ledger table,
+    .ledger thead,
+    .ledger tbody,
+    .ledger th,
+    .ledger td,
+    .ledger tr {
+        display: block;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .ledger thead { display: none; }
+
+    .ledger tbody tr:not(.nested-lead-row) {
+        border: 1px solid var(--border-dark);
+        border-radius: var(--radius-md);
+        margin: 12px;
+        background-color: rgba(255, 255, 255, 0.015);
+        overflow: hidden;
+    }
+
+    .ledger td {
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border-dark);
+        font-size: 0.9rem;
+    }
+
+    .ledger td:last-child { border-bottom: none; }
+
+    .ledger td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        color: var(--text-muted);
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    /* The expanded lead-detail row is its own already-styled panel —
+       no card border/label, just let nested-lead-wrapper's own CSS run */
+    .ledger .nested-lead-row td {
+        padding: 0;
+        border-bottom: none;
+    }
+    .ledger .nested-lead-row td::before { content: none; }
+    .nested-lead-wrapper { margin: 0 12px 14px 12px; }
+}
+
+/* Hide the secondary brand tag once the header gets tight
+   (moved here from dashboard.css so every breakpoint lives in one file) */
+@media (max-width: 600px) {
+    .app-brand-tag { display: none; }
+}
+
+/* Very small phones (older iPhone SE, small Android) — the fixed-width
+   340px drawer would overflow a 320px viewport, so cap it to the screen */
+@media (max-width: 380px) {
+    .drawer { width: 100vw; right: -100vw; }
+    .app-header { padding: 16px; }
+}
+
+/* -------------------------------------------------------------------------
+   LANDING (landing.css)
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 640px) {
+    .navbar {
+        padding: 16px 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+    }
+
+    .nav-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .hero-wrapper { padding: 16px; }
+}
+
+/* Tablet: the 380px radar circle and 3.2rem headline still fit, but
+   headline needs to come down a step before it wraps awkwardly */
+@media (max-width: 900px) {
+    .hero-headline { font-size: 2.6rem; }
+}
+
+/* Large phone: the fixed 380px radar-container is wider than the
+   viewport itself here, so it must scale down instead of overflowing */
+@media (max-width: 640px) {
+    .radar-container { width: 280px; height: 280px; }
+    .hero-headline { font-size: 2.1rem; }
+}
+
+@media (max-width: 400px) {
+    .brand-logo { font-size: 1.2rem; }
+    .radar-tagline { font-size: 0.68rem; letter-spacing: 0.18em; }
+    .radar-viewport { margin-bottom: 28px; }
+    .radar-container { width: 220px; height: 220px; }
+    .hero-headline { font-size: 1.7rem; }
+}
+
+/* Small-phone landscape / short viewports: min-height: calc(100vh - 90px)
+   on .hero-wrapper forces scrolling on short screens even though there's
+   plenty of horizontal room — relax it and shrink the radar so everything
+   fits above the fold */
+@media (max-height: 480px) and (orientation: landscape) {
+    .hero-wrapper { min-height: auto; padding: 24px 20px; }
+    .radar-container { width: 180px; height: 180px; }
+    .radar-viewport { margin-bottom: 20px; }
+    .hero-headline { font-size: 1.6rem; }
+}
+
+/* -------------------------------------------------------------------------
+   GLOBAL FORM/BUTTON SYSTEM (global.css) — shared by every auth page
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 420px) {
+    .form-input {
+        padding: 11px 14px;
+        font-size: 16px; /* keeps iOS Safari from auto-zooming on focus */
+    }
+
+    .btn-primary,
+    .btn-outline {
+        padding: 11px 18px;
+        font-size: 0.9rem;
+    }
+
+    .error-alert,
+    .success-alert {
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   LOGIN & SIGNUP (login.css / signup.css — identical .auth-card structure)
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+    .auth-card { padding: 28px 20px; }
+    .auth-header h2 { font-size: 1.4rem; }
+}
+
+@media (max-width: 360px) {
+    .auth-wrapper { padding: 12px; }
+    .auth-card { padding: 22px 16px; }
+}
+
+/* -------------------------------------------------------------------------
+   FORGOT PASSWORD — REQUEST (forgetpassrequest.css)
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 600px) {
+    .auth-card {
+        margin: 40px auto;
+        padding: 28px 20px;
+        max-width: 92vw;
+    }
+    .auth-header { font-size: 1.3rem; }
+}
+
+@media (max-width: 380px) {
+    .auth-card {
+        margin: 24px auto;
+        padding: 20px 16px;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   FORGOT PASSWORD — RESET (forgetpassreset.css)
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 600px) {
+    .auth-container {
+        margin: 40px auto;
+        padding: 20px;
+        max-width: 92vw;
+    }
+    .auth-container h2 { font-size: 1.3rem; }
+}
+
+@media (max-width: 380px) {
+    .auth-container {
+        margin: 20px auto;
+        padding: 16px;
+    }
+    .auth-container input,
+    .btn-signal {
+        padding: 10px;
+        font-size: 16px; /* keeps iOS Safari from auto-zooming on focus */
+    }
+}
+
+/* -------------------------------------------------------------------------
+   EMAIL (email.css) — honored by Apple Mail, Gmail's app, Outlook.com;
+   ignored gracefully by clients that don't support @media (e.g. old
+   desktop Outlook), so nothing breaks there either.
+   NOTE: many mail clients strip @import entirely — see the caveat in chat.
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 600px) {
+    .email-heading { font-size: 20px; }
+
+    .data-table,
+    .data-table tbody,
+    .data-table tr {
+        display: block;
+        width: 100%;
+    }
+
+    .table-label,
+    .table-value {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .table-label { border-bottom: none; padding-bottom: 4px; }
+    .table-value { border-top: none; padding-top: 4px; margin-bottom: 12px; }
+}
